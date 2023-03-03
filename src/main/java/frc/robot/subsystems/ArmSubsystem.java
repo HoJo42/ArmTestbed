@@ -10,6 +10,7 @@ import com.ctre.phoenix.sensors.WPI_PigeonIMU;
 import com.revrobotics.CANSparkMax;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -21,13 +22,15 @@ public class ArmSubsystem extends SubsystemBase {
   private DutyCycleEncoder encoder;
   private CANSparkMax winchMotor;
   private CANSparkMax rotatorMotor;
+  private DigitalInput limitSwitch;
 
   /** Creates a new ArmSubsystem. */
-  public ArmSubsystem(WPI_PigeonIMU pigeon, DutyCycleEncoder encoder, CANSparkMax winchMotor, CANSparkMax rotatorMotor) {
+  public ArmSubsystem(WPI_PigeonIMU pigeon, DutyCycleEncoder encoder, CANSparkMax winchMotor, CANSparkMax rotatorMotor, DigitalInput limitSwitch) {
     this.pigeon = pigeon;
     this.encoder = encoder;
     this.winchMotor = winchMotor;
     this.rotatorMotor = rotatorMotor;
+    this.limitSwitch = limitSwitch;
   }
 
   @Override
@@ -37,7 +40,9 @@ public class ArmSubsystem extends SubsystemBase {
     SmartDashboard.putNumber("Pigeon Pitch: ", pigeon.getPitch());
     SmartDashboard.putNumber("Pigeon Roll: ", pigeon.getRoll());
     SmartDashboard.putNumber("Motor Speed:", rotatorMotor.get());
-
+    SmartDashboard.putNumber("Winch Encoder", winchMotor.getEncoder().getPosition());
+    SmartDashboard.putNumber("winchMotor Volts", winchMotor.get());
+    SmartDashboard.putBoolean("Limit Switch", limitSwitch.get());
     // This method will be called once per scheduler run
   }
 

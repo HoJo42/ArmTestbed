@@ -20,10 +20,12 @@ import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -42,9 +44,11 @@ public class RobotContainer {
   private final WPI_PigeonIMU armPigeon = new WPI_PigeonIMU(ArmConstants.PIGEON_PORT);
   private final CANSparkMax winchMotor = new CANSparkMax(ArmConstants.WINCH_PORT, MotorType.kBrushless);
   private final CANSparkMax rotateMotor = new CANSparkMax(ArmConstants.ROTATE_PORT, MotorType.kBrushless);
+  private final DigitalInput limitSwitch = new DigitalInput(0);
   private final PIDController armPID = new PIDController(0.03, 0, 0);
 
-  private ArmSubsystem m_ArmSubsystem = new ArmSubsystem(armPigeon, armEncoder, winchMotor, rotateMotor);
+
+  private ArmSubsystem m_ArmSubsystem = new ArmSubsystem(armPigeon, armEncoder, winchMotor, rotateMotor, limitSwitch);
   private ArmPID m_ArmPID = new ArmPID(armPID, m_ArmSubsystem, armPigeon);
 
   private final CANSparkMax clawMotor = new CANSparkMax(ClawConstants.INTAKE_MOTOR_PORT, MotorType.kBrushless);
@@ -70,8 +74,8 @@ public class RobotContainer {
   }
 
   private void setDefaultCommands(){
-    m_ArmSubsystem.setDefaultCommand(m_ArmPID);
-    m_IntakeSubsystem.setDefaultCommand(m_RunIntake);
+    // m_ArmSubsystem.setDefaultCommand(m_ArmPID);
+    // m_IntakeSubsystem.setDefaultCommand(m_RunIntake);
   }
   // new RunCommand(() ->{
   //   armPID.setSetpoint(0);
@@ -96,7 +100,24 @@ public class RobotContainer {
 
     // Schedule `exampleMethodCommand` when the Xbox controller's B button is pressed,
     // cancelling on release.
-    m_driverController.b().whileTrue(m_exampleSubsystem.exampleMethodCommand());
+    m_driverController.b().whileTrue(new InstantCommand(() -> {
+      winchMotor.setVoltage(3);
+    }));
+    m_driverController.b().whileFalse(new InstantCommand(() -> {
+      winchMotor.setVoltage(0);
+    }));
+    m_driverController.a().whileTrue(new RunCommand(() -> {
+      if(!limitSwitch.get()) {
+        winchMotor.setVoltage(-2);
+      } else {
+        winchMotor.setVoltage(0);
+        winchMotor.getEncoder().setPosition(0);
+      }
+      
+    }));
+    m_driverController.a().whileFalse(new InstantCommand(() -> {
+      winchMotor.setVoltage(0);
+    }));
   }
 
   /**
